@@ -34,39 +34,34 @@ class SalesDataAnalyzer
                     list($key, $value) = explode(':', $field);
                     $sale[$key] = $value;
                 }
-                /*$storeId = $sale['storeId'];
+                $storeId = $sale['storeId'];
                 $productId = $sale['productId'];
                 $price = $sale['price'];
-                $orderId = $sale['orderId'];*/
+                $orderId = $sale['orderId'];
 
                 // revenu by store
-                $storeRevenue[$sale['storeId']] = isset($storeRevenue[$sale['storeId']]) ? $storeRevenue[$sale['storeId']] + ($sale['price'] / 100) : $sale['price'] / 100;
+                $storeRevenue[$storeId] = ($storeRevenue[$storeId] ?? 0) + ($price / 100);
 
                 // count of the product sale by store
-                $storeSaleCount[$sale['storeId']] = isset($storeSaleCount[$sale['storeId']]) ? $storeSaleCount[$sale['storeId']] + 1 : 1;
+                $storeSaleCount[$storeId] = ($storeSaleCount[$storeId] ?? 0) + 1;
 
                 // count of the order by store
-                $storeOrderCount[$sale['storeId']] = isset($storeOrderCount[$sale['storeId']]) ? $storeOrderCount[$sale['storeId']] + 1 : 1;
-                
+                $storeOrderCount[$storeId] = ($storeOrderCount[$storeId] ?? 0) + 1;
+
                 // Total of revenu per product by store
-                $productRevenue[$sale['productId']] = isset($productRevenue[$sale['productId']]) ? $productRevenue[$sale['productId']] + ($sale['price'] / 100) : $sale['price'] / 100;
+                $productRevenue[$productId] = ($productRevenue[$productId] ?? 0) + ($price / 100);
 
                 // Count of sale product per store
-                $productSaleCount[$sale['productId']] = isset($productSaleCount[$sale['productId']]) ? $productSaleCount[$sale['productId']] + 1 : 1;
-                
-                $orderRevenue[$sale['orderId']] = isset($orderRevenue[$sale['orderId']]) ? $orderRevenue[$sale['orderId']] + ($sale['price'] / 100) : $sale['price'] / 100;
+                $productSaleCount[$productId] = ($productSaleCount[$productId] ?? 0) + 1;
+
+                $orderRevenue[$orderId] = ($orderRevenue[$orderId] ?? 0) + ($price / 100);
             }
 
             fclose($file);
-            arsort($storeRevenue);
-            arsort($storeSaleCount);
-            arsort($storeOrderCount);
-            arsort($productRevenue);
-            arsort($productSaleCount);
 
-            $results = [
-                'topStoresByRevenue' => $this->getTopItemsRevenu($storeRevenue, 3),
-                'topStoresBySaleCount' => $this->getTopItemsCount($storeSaleCount, 3),
+            return [
+                'topStoresByRevenue' => $this->getTopThree($storeRevenue, 'storeId', 'revenue'),
+                'topStoresBySaleCount' => $this->getTopThree($storeSaleCount, 'storeId', 'count'),
                 'topStoresByAverageOrderAmount' => [
                     [
                         'storeId' => 252,
@@ -81,17 +76,94 @@ class SalesDataAnalyzer
                         'averageOrderAmount' => 2717.83
                     ],
                 ],
-                'topProductsByRevenue' => $this->getTopProductByRevenu($productRevenue, 3),
-                'topProductsBySaleCount' => $this->getTopProductBySaleCount($productSaleCount, 3),
+                'topProductsByRevenue' => $this->getTopThree($productRevenue, 'productId', 'revenue'),
+                'topProductsBySaleCount' => $this->getTopThree($productSaleCount, 'productId', 'count'),
             ];
             
-            //var_dump($results);
-            return $results;
+            /*var_dump($this->getTopThree($productSaleCount, 'productId', 'count'));
+            return [];*/
 
 
         } catch (\Throwable $th) {
             throw $th;
         }
+    }
+    public function getTopThree(array $array, string $keyName, $resultValue): array
+    {
+        $result = [];
+    
+        foreach ($array as $key => $value) {
+            if (count($result) < 3) {
+                $result[$key] = number_format($value, 2, '.', '');
+            } else {
+                // Vérifie si la valeur actuelle est plus grande que la plus petite des trois actuelles
+                $minValue = min($result);
+                if ($value > $minValue) {
+                    $minKey = array_search($minValue, $result, true);
+                    unset($result[$minKey]);
+                    $result[$key] = number_format($value, 2, '.', '');
+                }
+            }
+        }
+    
+        arsort($result);
+    
+        $formattedResult = [];
+        foreach($result as $key => $value){
+            $formattedResult[] = [
+                $keyName => $key,
+                $resultValue => $value,
+            ];
+        }
+    
+        return $formattedResult;
+    }
+    
+    private function getTopItemsx(array $array, int $count, string $keyName, string $valueName): array
+    {
+        uasort($array, function ($a, $b) {
+            return $b <=> $a;
+        });
+
+        $result = [];
+        foreach (array_slice($array, 0, $count, true) as $key => $value) {
+            $result[] = [
+                $keyName => $key,
+                $valueName => number_format($value, 2, '.', '')
+            ];
+        }
+
+        return $result;
+    }
+    
+    private function getTopItems2(array $array, int $count, string $keyName, string $valueName): array
+    {
+        $result = [];
+
+        foreach ($array as $key => $value) {
+            // Si le résultat n'a pas encore atteint la taille désirée, ajoute simplement
+            if (count($result) < $count) {
+                $result[] = [
+                    $keyName => $key,
+                    $valueName => number_format($value, 2, '.', '')
+                ];
+            } else {
+                // Trouve l'élément avec la plus grande valeur dans le résultat
+                $maxValue = max(array_column($result, $valueName));
+                
+                // Si la valeur actuelle est plus grande que la plus grande valeur dans le résultat,
+                // remplace la plus grande valeur par la nouvelle valeur
+                if ($value > $maxValue) {
+                    $maxKey = array_search($maxValue, array_column($result, $valueName));
+                    $result[$maxKey] = [
+                        $keyName => $key,
+                        $valueName => number_format($value, 2, '.', '')
+                    ];
+                }
+            }
+        }
+
+        return $result;
     }
     private function getTopItemsRevenu(array $array, int $count): array
     {
@@ -118,6 +190,7 @@ class SalesDataAnalyzer
             ];
             
         }
+        
         return $result;
     }
 
