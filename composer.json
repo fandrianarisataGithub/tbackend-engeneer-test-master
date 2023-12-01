@@ -1,0 +1,28 @@
+{
+    "name": "welfaire/recruitment-test-backend",
+    "type": "project",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Welfaire Tech Team",
+            "email": "tech@welfaire.com"
+        }
+    ],
+    "require": {
+        "php": "^8.0"
+    },
+    "require-dev": {
+        "nikic/php-parser": "^4.12",
+        "phpunit/phpunit": "^9.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "App\\Tests\\": "tests/"
+        }
+    }
+}
