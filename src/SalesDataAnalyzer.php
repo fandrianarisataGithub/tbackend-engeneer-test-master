@@ -10,6 +10,7 @@ class SalesDataAnalyzer
 
         try {
             $filename = __DIR__ . '/../.tmp/saleData.txt';
+
             if ( !file_exists($fileName) ) {
                 throw new \Exception('File not found.');
             }
@@ -32,6 +33,7 @@ class SalesDataAnalyzer
                 $storeId = $sale['storeId'];
                 $productId = $sale['productId'];
                 $price = $sale['price'];
+                $orderId = $sale['orderId'];
         
                 // revenu by store
                 $storeRevenue[$storeId] = ($storeRevenue[$storeId] ?? 0) + ($price / 100);
@@ -42,8 +44,8 @@ class SalesDataAnalyzer
                 // count of the order by store
                 $storeOrderCount[$storeId] = ($storeOrderCount[$storeId] ?? 0) + 1;
 
-                //storeAverageOrderAmount
-
+                //AverageOrderAmount by orderId by storeId
+                $storeAverageOrderAmount[$storeId][$orderId] = ($storeAverageOrderAmount[$storeId][$orderId] ?? 0) + ($price / 100);
 
                 // Total of revenu per product by store
                 $productRevenue[$productId] = ($productRevenue[$productId] ?? 0) + ($price / 100);
@@ -55,33 +57,19 @@ class SalesDataAnalyzer
             
             fclose($file);
             
-           return [
+            return [
                 'topStoresByRevenue' => $this->getTop($storeRevenue, 'storeId', 'revenue', 3),
                 'topStoresBySaleCount' => $this->getTop($storeSaleCount, 'storeId', 'count', 3),
-                //'topStoresByAverageOrderAmount' => $this->getTopStoresByAverageOrderAmount($storeRevenue, $storeOrderCount),
-                'topStoresByAverageOrderAmount' => [
-                    [
-                        'storeId' => 252,
-                        'averageOrderAmount' => 2797.96
-                    ],
-                    [
-                        'storeId' => 250,
-                        'averageOrderAmount' => 2755.83
-                    ],
-                    [
-                        'storeId' => 253,
-                        'averageOrderAmount' => 2717.83
-                    ],
-                ],
+                'topStoresByAverageOrderAmount' => $this->getTopStoresByAverageOrderAmount($storeAverageOrderAmount),
                 'topProductsByRevenue' => $this->getTop($productRevenue, 'productId', 'revenue', 3),
                 'topProductsBySaleCount' => $this->getTop($productSaleCount, 'productId', 'count', 3),
             ];
-
 
         } catch (\Throwable $th) {
             throw $th;
         }
     }
+
     public function getTop(array $array, string $keyName, $resultValue, $count): array
     {
         $result = [];
@@ -100,9 +88,9 @@ class SalesDataAnalyzer
         }
     
         arsort($result);
-    
         $formattedResult = [];
-        foreach($result as $key => $value){
+        
+        foreach ($result as $key => $value){
             $formattedResult[] = [
                 $keyName => $key,
                 $resultValue => $value,
@@ -110,15 +98,25 @@ class SalesDataAnalyzer
         }
     
         return $formattedResult;
-    }   
-    public function getTopStoresByAverageOrderAmount(array $storeRevenue, array $storeOrderCount): array
+    }
+
+    public function getTopStoresByAverageOrderAmount(array $storeAverageOrderAmount): array
     {
         $result = [];
 
-        foreach ($storeRevenue as $storeId => $revenue) {
-            $orderCount = $storeOrderCount[$storeId] ?? 0;
+        foreach ($storeAverageOrderAmount as $storeId => $orderIdData) {
+            $averageOrderAmount = 0;
+            $totalOrderAmount = 0;
+            $orderCount = 0;
 
-            $averageOrderAmount = $orderCount > 0 ? $revenue / $orderCount : 0;
+            foreach ($orderIdData as $orderId => $orderAmount) {
+                $totalOrderAmount += $orderAmount;
+                $orderCount++;
+            }
+
+            if ($orderCount > 0) {
+                $averageOrderAmount = $totalOrderAmount / $orderCount;
+            }
 
             $result[] = [
                 'storeId' => $storeId,
@@ -133,7 +131,6 @@ class SalesDataAnalyzer
         $result = array_slice($result, 0, 3);
 
         return $result;
-    }
-
+    }   
 
 }
