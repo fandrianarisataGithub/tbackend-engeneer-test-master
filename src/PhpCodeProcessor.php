@@ -2,20 +2,11 @@
 
 namespace App;
 
-use PhpParser\Builder\Param;
 use PhpParser\Node;
-use PhpParser\NodeDumper;
-use PhpParser\NodeFinder;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PhpParser\PrettyPrinter;
-use PhpParser\BuilderFactory;
-use PhpParser\Node\Arg;
-use PhpParser\Node\Name;
-use PhpParser\Node\Stmt\Class_;
 use PhpParser\NodeVisitorAbstract;
-use PhpParser\Node\Stmt\ClassMethod;
-use PhpParser\Node\Name\FullyQualified;
 
 class PhpCodeProcessor
 {
@@ -124,8 +115,6 @@ class PhpCodeProcessor
                 }
             });
             $ast = $traverser->traverse($ast);
-            /*$dumper = new NodeDumper;
-            echo $dumper->dump($ast) . "\n";*/
             return (new PrettyPrinter\Standard())->prettyPrintFile($ast);
         }else{
             return null;

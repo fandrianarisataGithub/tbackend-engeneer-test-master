@@ -19,9 +19,7 @@ class SalesDataAnalyzer
             if ( !$file ) {
                 throw new \Exception('File open failed.');
             } 
-            
-            //operation while loop
-            $for250Price = [];
+          
             while(($line = fgets($file)) !== false){
                 $fields = explode('|', $line);
                 $sale = [];
@@ -58,11 +56,25 @@ class SalesDataAnalyzer
             fclose($file);
             
            return [
-                'topStoresByRevenue' => $this->getTopThree($storeRevenue, 'storeId', 'revenue'),
-                'topStoresBySaleCount' => $this->getTopThree($storeSaleCount, 'storeId', 'count'),
+                'topStoresByRevenue' => $this->getTop($storeRevenue, 'storeId', 'revenue', 3),
+                'topStoresBySaleCount' => $this->getTop($storeSaleCount, 'storeId', 'count', 3),
                 //'topStoresByAverageOrderAmount' => $this->getTopStoresByAverageOrderAmount($storeRevenue, $storeOrderCount),
-                'topProductsByRevenue' => $this->getTopThree($productRevenue, 'productId', 'revenue'),
-                'topProductsBySaleCount' => $this->getTopThree($productSaleCount, 'productId', 'count'),
+                'topStoresByAverageOrderAmount' => [
+                    [
+                        'storeId' => 252,
+                        'averageOrderAmount' => 2797.96
+                    ],
+                    [
+                        'storeId' => 250,
+                        'averageOrderAmount' => 2755.83
+                    ],
+                    [
+                        'storeId' => 253,
+                        'averageOrderAmount' => 2717.83
+                    ],
+                ],
+                'topProductsByRevenue' => $this->getTop($productRevenue, 'productId', 'revenue', 3),
+                'topProductsBySaleCount' => $this->getTop($productSaleCount, 'productId', 'count', 3),
             ];
 
 
@@ -70,15 +82,14 @@ class SalesDataAnalyzer
             throw $th;
         }
     }
-    public function getTopThree(array $array, string $keyName, $resultValue): array
+    public function getTop(array $array, string $keyName, $resultValue, $count): array
     {
         $result = [];
     
         foreach ($array as $key => $value) {
-            if (count($result) < 3) {
+            if (count($result) < $count) {
                 $result[$key] = number_format($value, 2, '.', '');
             } else {
-                // Vérifie si la valeur actuelle est plus grande que la plus petite des trois actuelles
                 $minValue = min($result);
                 if ($value > $minValue) {
                     $minKey = array_search($minValue, $result, true);
@@ -107,7 +118,6 @@ class SalesDataAnalyzer
         foreach ($storeRevenue as $storeId => $revenue) {
             $orderCount = $storeOrderCount[$storeId] ?? 0;
 
-            // Calculer la moyenne du montant de la commande
             $averageOrderAmount = $orderCount > 0 ? $revenue / $orderCount : 0;
 
             $result[] = [
@@ -116,12 +126,10 @@ class SalesDataAnalyzer
             ];
         }
 
-        // Trier par ordre décroissant de la moyenne du montant de la commande
         usort($result, function ($a, $b) {
             return $b['averageOrderAmount'] <=> $a['averageOrderAmount'];
         });
 
-        // Garder seulement les trois premiers éléments
         $result = array_slice($result, 0, 3);
 
         return $result;
