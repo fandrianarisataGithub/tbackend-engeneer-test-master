@@ -11,6 +11,7 @@ use PhpParser\ParserFactory;
 use PhpParser\PrettyPrinter;
 use PhpParser\BuilderFactory;
 use PhpParser\Node\Arg;
+use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\NodeVisitorAbstract;
 use PhpParser\Node\Stmt\ClassMethod;
@@ -23,7 +24,6 @@ class PhpCodeProcessor
         $parser = (new ParserFactory())->create(ParserFactory::PREFER_PHP7);
         $ast = $parser->parse($code);
         if($ast !== null && is_array($ast)){
-            //var_dump($ast);
             $traverser = new NodeTraverser();
             $traverser->addVisitor(new class extends NodeVisitorAbstract{
                 public function leaveNode(Node $node)
@@ -68,7 +68,21 @@ class PhpCodeProcessor
                             )
                         )
                     ];
-                    //var_dump($createMethod);
+
+                    // Create a new 'self' expression 
+                    // important if there is constructorParams
+                    $newSelf = new Node\Expr\New_(
+                        new Node\Name(['self']),
+                        // set all args for the create method result
+                        array_map(function($var){
+                            return new Node\Expr\Variable($var->var->name);
+                        }, $constructorParams)
+                    );
+
+                    // Replace the return statement with the new expression
+                    $createMethod->stmts = [
+                        new Node\Stmt\Return_($newSelf)
+                    ];
                 }
 
                 private function findConstructor(Node\Stmt\Class_ $class)
@@ -114,7 +128,7 @@ class PhpCodeProcessor
             echo $dumper->dump($ast) . "\n";*/
             return (new PrettyPrinter\Standard())->prettyPrintFile($ast);
         }else{
-            var_dump('tsy izy');
+            return null;
         }
     }
 }

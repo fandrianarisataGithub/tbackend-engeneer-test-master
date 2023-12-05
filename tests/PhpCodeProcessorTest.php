@@ -20,6 +20,109 @@ class PhpCodeProcessorTest extends TestCase
                     
                     class Bar
                     {
+                        public function __construct()
+                        {
+                        }
+                    }
+                    EOS,
+                <<<'EOS'
+                    <?php
+                    
+                    namespace Foo;
+                    
+                    class Bar
+                    {
+                        public static function create(): self
+                        {
+                            return new self();
+                        }
+                        
+                        private function __construct()
+                        {
+                        }
+                    }
+                    EOS,
+            ],
+            [
+                <<<'EOS'
+                    <?php
+                    
+                    namespace Foo;
+                    
+                    class Bar
+                    {
+                        public static function create(): Bar
+                        {
+                            return new Bar();
+                        }
+                        
+                        public function __construct()
+                        {
+                        }
+                    }
+                    EOS,
+                <<<'EOS'
+                    <?php
+                    
+                    namespace Foo;
+                    
+                    class Bar
+                    {
+                        public static function create(): self
+                        {
+                            return new self();
+                        }
+                        
+                        private function __construct()
+                        {
+                        }
+                    }
+                    EOS,
+            ],
+            [
+                <<<'EOS'
+                    <?php
+                    
+                    namespace Foo;
+                    
+                    class Bar
+                    {
+                        public static function create(): self
+                        {
+                            return new self();
+                        }
+                        
+                        public function __construct()
+                        {
+                        }
+                    }
+                    EOS,
+                <<<'EOS'
+                    <?php
+                    
+                    namespace Foo;
+                    
+                    class Bar
+                    {
+                        public static function create(): self
+                        {
+                            return new self();
+                        }
+                        
+                        private function __construct()
+                        {
+                        }
+                    }
+                    EOS,
+            ],
+            [
+                <<<'EOS'
+                    <?php
+                    
+                    namespace Foo;
+                    
+                    class Bar
+                    {
                         public function __construct(int $a, string $b, ?\DateTime $c = null)
                         {
                         }
@@ -43,6 +146,26 @@ class PhpCodeProcessorTest extends TestCase
                     }
                     EOS,
             ],
+            [
+                <<<'EOS'
+                    <?php
+                    
+                    namespace Foo;
+                    
+                    class Bar
+                    {
+                    }
+                    EOS,
+                <<<'EOS'
+                    <?php
+                    
+                    namespace Foo;
+                    
+                    class Bar
+                    {
+                    }
+                    EOS,
+            ],
         ];
     }
 
@@ -52,14 +175,7 @@ class PhpCodeProcessorTest extends TestCase
      */
     public function testProcess(string $inputPhpCode, string $expectedOutputPhpCode)
     {
-        
         $phpCodeProcessor = new PhpCodeProcessor();
-        var_dump('aricette le vita');
-        var_dump(self::normalizePhpCode($phpCodeProcessor->process($inputPhpCode)));
-        var_dump('/aricette le vita');
-        var_dump('aricette le endrasana');
-        var_dump(self::normalizePhpCode($expectedOutputPhpCode));
-        var_dump('/aricette le endrasana');
         $this->assertEquals(
             self::normalizePhpCode($expectedOutputPhpCode),
             self::normalizePhpCode($phpCodeProcessor->process($inputPhpCode))
